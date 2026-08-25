@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Q&A 셀프 테스트 (복습 필터 및 발광 효과)</title>
+    <title>Q&A 셀프 테스트 (단어별 힌트 및 복습 필터)</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tailwind Forms Plugin (체크박스 스타일링) -->
@@ -11,43 +11,39 @@
     <style>
         /* 커스텀 발광 애니메이션 클래스 */
         .glow-effect {
-            background-color: rgb(255 241 242 / 0.7);
-            /* bg-rose-50 */
-            border-color: rgb(253 164 175);
-            /* border-rose-300 */
+            background-color: rgb(255 241 242 / 0.7); /* bg-rose-50 */
+            border-color: rgb(253 164 175); /* border-rose-300 */
             box-shadow: 0 0 20px rgba(244, 63, 94, 0.25);
         }
     </style>
 </head>
-
 <body class="bg-slate-50 text-slate-800 min-h-screen p-4 sm:p-8">
 
     <!-- 메인 컨테이너 -->
     <div class="max-w-3xl mx-auto">
-        <div class="text-center mb-8 relative">
+        <div class="text-center mb-8 relative"  style="position: fixed; left: 50%; transform: translateX(-50%); background-color: azure; width: 100%; top: 0; padding: 1rem; z-index: 999;">
             <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">셀프 테스트 Q&A</h1>
             <p class="text-slate-500 text-sm sm:text-base">답변을 직접 입력해 보고, 우측 아이콘을 눌러 정답을 확인하세요.</p>
-
-            <!-- 컨트롤 버튼 영역 (힌트 토글 & 복습 항목 필터) -->
+            
+            <!-- 컨트롤 버튼 영역 -->
             <div class="mt-5 flex flex-wrap justify-center gap-3">
                 <button id="hint-toggle-btn" class="flex items-center gap-2 px-4 py-2.5 bg-amber-100 text-amber-700 font-bold rounded-full hover:bg-amber-200 transition-colors shadow-sm text-sm sm:text-base">
                     💡 전체 힌트 보기
                 </button>
                 <button id="filter-toggle-btn" class="flex items-center gap-2 px-4 py-2.5 bg-rose-100 text-rose-600 font-bold rounded-full hover:bg-rose-200 transition-colors shadow-sm text-sm sm:text-base">
                     <span id="filter-text">⭐ 복습 항목 모아보기</span>
-                    <!-- 체크된 개수 표시 배지 -->
                     <span id="checked-count-badge" class="bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs sm:text-sm shadow-inner transition-colors">0</span>
                 </button>
             </div>
         </div>
-
-        <!-- Q&A 아코디언 리스트가 렌더링될 영역 -->
-        <div id="qa-container" class="space-y-4"></div>
+        
+        <!-- Q&A 아코디언 리스트 -->
+        <div id="qa-container" class="space-y-4 pt-40"></div>
     </div>
 
     <script>
         // 1. 데이터 배열
-        const groupedQaData = [{
+         const groupedQaData = [{
                 category: "section1",
                 questions: [{
                         q: "계 1:1~8의 제목을 기록하시오.",
@@ -336,7 +332,7 @@
                     },
                     {
                         q: "계 9:7 황충들의 모양은 (       )을 위하여 예비한 말들 같고 그 머리에 금 같은 (            ) 비슷한 것을 썼으며 그 얼굴은 사람의 (       ) 같고",
-                        a: "전쟁, 면류관"
+                        a: "전쟁, 면류관, 얼굴"
                     },
                     {
                         q: "계 10:1 내가 또 보니 힘센 다른 (       )가 구름을 입고 (       )에서 내려 오는데 그 머리 위에 무지개가 있고 그 얼굴은 해 같고 그 발은 (           ) 같으며",
@@ -386,36 +382,56 @@
             }
         ];
 
-        const container = document.getElementById('qa-container');
-        const allInputFields = [];
-        const allQuestionsData = []; // 필터링을 위해 모든 요소 참조 저장
-        let checkedCount = 0; // 체크된 문항 수
 
+        const container = document.getElementById('qa-container');
+        const allInputFields = []; 
+        const allQuestionsData = []; 
+        let checkedCount = 0; 
+
+        // [변경됨] 띄어쓰기 기준으로 쪼개서 단어별로 1~2개 힌트 제공
         function generateHint(answer) {
-            const chars = answer.split('');
-            const validIndices = [];
-            chars.forEach((char, i) => {
-                if (char.trim() !== '' && char !== ',') validIndices.push(i);
+            const words = answer.split(' '); // 띄어쓰기를 기준으로 단어 배열 생성
+            
+            const maskedWords = words.map(word => {
+                const chars = word.split('');
+                const validIndices = [];
+                
+                // 공백이나 쉼표(,)가 아닌 실제 문자의 인덱스만 추출
+                chars.forEach((char, i) => {
+                    if (char.trim() !== '' && char !== ',') {
+                        validIndices.push(i);
+                    }
+                });
+                
+                // 기호만 있는 덩어리면 그대로 반환
+                if (validIndices.length === 0) return word; 
+                
+                // 단어 내에서 보여줄 글자 수: 최소 1개 ~ 최대 2개 
+                // (단어 길이가 1자라면 1개만)
+                const revealCount = Math.min(Math.floor(Math.random() * 2) + .5, validIndices.length);
+                
+                // 섞어서 당첨된 인덱스 추출
+                const selectedIndices = validIndices.sort(() => 0.5 - Math.random()).slice(0, revealCount);
+                
+                return chars.map((char, i) => {
+                    if (char.trim() === '' || char === ',') return char; // 기호는 노출
+                    if (selectedIndices.includes(i)) return char; // 당첨된 인덱스 노출
+                    return '◯'; // 나머지는 동그라미 처리
+                }).join('');
             });
-            const hintCount = Math.min(Math.floor(Math.random() * 3) + 3, validIndices.length);
-            const selectedIndices = validIndices.sort(() => 0.5 - Math.random()).slice(0, hintCount);
-            return chars.map((char, i) => {
-                if (char.trim() === '' || char === ',') return char;
-                if (selectedIndices.includes(i)) return char;
-                return '◯';
-            }).join('');
+            
+            return maskedWords.join(' '); // 다시 띄어쓰기로 합치기
         }
 
         // 카운트 배지 업데이트 함수
         function updateCheckedCount() {
             const badge = document.getElementById('checked-count-badge');
             badge.innerText = checkedCount;
-            // 효과 애니메이션 (가볍게 튀어오름)
             badge.classList.add('scale-125');
             setTimeout(() => badge.classList.remove('scale-125'), 150);
         }
 
-        let questionCounter = 1;
+        let questionCounter = 1; 
 
         groupedQaData.forEach((group, groupIndex) => {
             const accordionWrapper = document.createElement('div');
@@ -431,8 +447,8 @@
             `;
 
             const accordionBody = document.createElement('div');
-            accordionBody.className = "px-5 py-6 space-y-6 border-t border-slate-200"; // space-y-6로 아이템 간 간격 자동 설정
-
+            accordionBody.className = "px-5 py-6 space-y-6 border-t border-slate-200"; 
+            
             if (groupIndex !== 0) {
                 accordionBody.style.display = 'none';
                 accordionHeader.querySelector('.chevron-icon').classList.add('-rotate-90');
@@ -451,11 +467,10 @@
 
             group.questions.forEach((item, index) => {
                 const questionBlock = document.createElement('div');
-                // 카드 발광 효과를 위해 패딩과 보더를 가진 컨테이너로 래핑
                 questionBlock.className = "p-4 sm:p-5 -mx-4 sm:-mx-5 rounded-2xl border-2 border-transparent transition-all duration-500 ease-out";
-
-                const uniqueId = `chk-${groupIndex}-${index}`;
-
+                
+                const uniqueId = `chk-${groupIndex}-${index}`; 
+                
                 const headerWrapper = document.createElement('div');
                 headerWrapper.className = "flex items-start gap-3 mb-3";
 
@@ -470,26 +485,21 @@
                 questionTitle.className = "text-base sm:text-lg font-bold text-slate-800 leading-relaxed cursor-pointer select-none transition-all duration-200 block";
                 questionTitle.innerHTML = `<span class="text-indigo-600 mr-2 font-black inline-block question-num">Q${questionCounter++}.</span><pre class="inline" style="white-space: pre-wrap; font-family: inherit;">${item.q}</pre>`;
 
-                // 체크박스 상태 변경 이벤트 (발광 효과 & 카운트)
                 checkbox.addEventListener('change', (e) => {
                     const qNum = questionTitle.querySelector('.question-num');
-                    if (e.target.checked) {
+                    if(e.target.checked) {
                         checkedCount++;
-                        // 텍스트 강조
                         questionTitle.classList.add('text-rose-600');
                         questionTitle.classList.remove('text-slate-800');
                         qNum.classList.add('text-rose-600');
                         qNum.classList.remove('text-indigo-600');
-                        // 발광(Glow) 클래스 추가
                         questionBlock.classList.add('glow-effect');
                     } else {
                         checkedCount--;
-                        // 원상 복구
                         questionTitle.classList.remove('text-rose-600');
                         questionTitle.classList.add('text-slate-800');
                         qNum.classList.remove('text-rose-600');
                         qNum.classList.add('text-indigo-600');
-                        // 발광(Glow) 클래스 제거
                         questionBlock.classList.remove('glow-effect');
                     }
                     updateCheckedCount();
@@ -499,17 +509,17 @@
                 headerWrapper.appendChild(questionTitle);
 
                 const inputWrapper = document.createElement('div');
-                inputWrapper.className = "flex items-center gap-2 sm:gap-3 relative pl-8 sm:pl-9";
+                inputWrapper.className = "flex items-center gap-2 sm:gap-3 relative pl-8 sm:pl-9"; 
 
-                const inputField = document.createElement('input');
+                const inputField = document.createElement('textarea');
                 inputField.type = "text";
                 inputField.placeholder = "이곳에 답을 적어보세요!";
                 inputField.className = "flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm transition-all";
-
+                
                 const hintText = "힌트: " + generateHint(item.a);
                 inputField.dataset.originalPlaceholder = "이곳에 답을 적어보세요!";
                 inputField.dataset.hintPlaceholder = hintText;
-                allInputFields.push(inputField);
+                allInputFields.push(inputField); 
 
                 const tooltipContainer = document.createElement('div');
                 tooltipContainer.className = "relative flex-shrink-0";
@@ -562,11 +572,10 @@
                 tooltipContainer.appendChild(tooltipBox);
                 inputWrapper.appendChild(inputField);
                 inputWrapper.appendChild(tooltipContainer);
-                questionBlock.appendChild(headerWrapper);
+                questionBlock.appendChild(headerWrapper); 
                 questionBlock.appendChild(inputWrapper);
                 accordionBody.appendChild(questionBlock);
 
-                // 필터링을 위해 배열에 관련 요소들 저장
                 allQuestionsData.push({
                     block: questionBlock,
                     checkbox: checkbox,
@@ -581,9 +590,7 @@
             container.appendChild(accordionWrapper);
         });
 
-        // ------------------------------------
-        // 기능 1. 힌트 토글 로직
-        // ------------------------------------
+        // 힌트 토글 로직
         const hintToggleBtn = document.getElementById('hint-toggle-btn');
         let isHintActive = false;
 
@@ -604,9 +611,7 @@
             }
         });
 
-        // ------------------------------------
-        // 기능 2. 모아보기 (필터) 로직
-        // ------------------------------------
+        // 모아보기 (필터) 로직
         const filterToggleBtn = document.getElementById('filter-toggle-btn');
         const filterText = document.getElementById('filter-text');
         const badgeSpan = document.getElementById('checked-count-badge');
@@ -621,14 +626,12 @@
             isFilterMode = !isFilterMode;
 
             if (isFilterMode) {
-                // 필터 모드 켜기 (버튼 스타일 어둡게 변경)
                 filterText.innerText = "⭐ 전체 항목 보기";
                 filterToggleBtn.classList.replace('bg-rose-100', 'bg-slate-800');
                 filterToggleBtn.classList.replace('text-rose-600', 'text-white');
                 filterToggleBtn.classList.replace('hover:bg-rose-200', 'hover:bg-slate-900');
                 badgeSpan.classList.replace('bg-rose-500', 'bg-slate-600');
 
-                // 아코디언별로 보여질 항목 개수를 추적
                 const wrapperVisibility = new Map();
 
                 allQuestionsData.forEach(item => {
@@ -636,30 +639,27 @@
                         item.block.style.display = 'block';
                         wrapperVisibility.set(item.wrapper, (wrapperVisibility.get(item.wrapper) || 0) + 1);
                     } else {
-                        item.block.style.display = 'none'; // 체크 안 된 항목 숨기기
+                        item.block.style.display = 'none'; 
                     }
                 });
 
-                // 아코디언 제어: 체크된 항목이 하나도 없는 카테고리는 전체 숨김
                 allQuestionsData.forEach(item => {
                     const visibleCount = wrapperVisibility.get(item.wrapper) || 0;
                     if (visibleCount > 0) {
                         item.wrapper.style.display = 'block';
-                        item.body.style.display = 'block'; // 체크된게 있으면 무조건 열어두기
+                        item.body.style.display = 'block'; 
                         item.headerIcon.classList.remove('-rotate-90');
                     } else {
                         item.wrapper.style.display = 'none';
                     }
                 });
             } else {
-                // 필터 모드 끄기 (전체 보기)
                 filterText.innerText = "⭐ 복습 항목 모아보기";
                 filterToggleBtn.classList.replace('bg-slate-800', 'bg-rose-100');
                 filterToggleBtn.classList.replace('text-white', 'text-rose-600');
                 filterToggleBtn.classList.replace('hover:bg-slate-900', 'hover:bg-rose-200');
                 badgeSpan.classList.replace('bg-slate-600', 'bg-rose-500');
 
-                // 모든 요소 다시 보여주기
                 allQuestionsData.forEach(item => {
                     item.block.style.display = 'block';
                     item.wrapper.style.display = 'block';
@@ -667,4 +667,5 @@
             }
         });
     </script>
-</body></html>
+</body>
+</html>
