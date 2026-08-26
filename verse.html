@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>성구 단계별 암기 (키워드 연상법)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 빈칸 퀴즈용 입력창 스타일 */
+        .blank-input {
+            border-bottom: 2px solid #6366f1;
+            background: transparent;
+            text-align: center;
+            outline: none;
+            font-weight: bold;
+            color: #4f46e5;
+            transition: all 0.2s;
+        }
+        .blank-input:focus {
+            border-bottom-color: #f43f5e;
+            background: #fff1f2;
+        }
+        .correct { border-bottom-color: #10b981 !important; color: #10b981 !important; }
+        .wrong { border-bottom-color: #ef4444 !important; color: #ef4444 !important; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen font-sans pb-10">
+
+    <div class="max-w-4xl mx-auto pt-10 px-4">
+        <!-- 헤더 & 성구 선택 -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm mb-6 text-center">
+            <h1 class="text-2xl font-bold text-slate-900 mb-2">📖 성구 점진적 암기 훈련</h1>
+            <p class="text-slate-500 mb-6 text-sm">해마학습법: 연상 키워드와 힌트를 활용해 장기기억으로 전환하세요.</p>
+            
+            <div class="flex items-center justify-center gap-3">
+                <button id="prev-btn" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">◀</button>
+                <select id="verse-select" class="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 w-64 text-center cursor-pointer">
+                    <!-- JS로 옵션 채워짐 -->
+                </select>
+                <button id="next-btn" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">▶</button>
+            </div>
+        </div>
+
+        <!-- 4단계 탭 컨트롤 -->
+        <div class="flex grid grid-cols-4 gap-2 mb-6">
+            <button class="tab-btn active bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-sm transition-all" data-target="step1">1단계<br><span class="text-xs font-normal">눈으로 읽기</span></button>
+            <button class="tab-btn bg-white text-slate-500 hover:bg-indigo-50 font-bold py-3 rounded-xl shadow-sm transition-all" data-target="step2">2단계<br><span class="text-xs font-normal">초성 연상하기</span></button>
+            <button class="tab-btn bg-white text-slate-500 hover:bg-indigo-50 font-bold py-3 rounded-xl shadow-sm transition-all" data-target="step3">3단계<br><span class="text-xs font-normal">빈칸 퀴즈</span></button>
+            <button class="tab-btn bg-white text-slate-500 hover:bg-indigo-50 font-bold py-3 rounded-xl shadow-sm transition-all" data-target="step4">4단계<br><span class="text-xs font-normal">실전 쓰기</span></button>
+        </div>
+
+        <!-- 암기 카드 영역 -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg border border-indigo-100 min-h-[300px] flex flex-col justify-center">
+            
+            <!-- 1단계: 전체 텍스트 -->
+            <div id="step1" class="step-content block text-center">
+                <div class="mb-6 verse-header"></div>
+                <p class="text-xl leading-loose font-medium text-slate-800 break-keep verse-text"></p>
+            </div>
+
+            <!-- 2단계: 초성 힌트 -->
+            <div id="step2" class="step-content hidden text-center">
+                <div class="mb-6 verse-header"></div>
+                <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-100">
+                    <p id="chosung-text" class="text-xl leading-loose font-bold text-indigo-700 break-keep tracking-widest"></p>
+                </div>
+                <p class="text-slate-400 mt-4 text-sm">초성을 보며 입으로 소리 내어 외워보세요.</p>
+            </div>
+
+            <!-- 3단계: 빈칸 퀴즈 -->
+            <div id="step3" class="step-content hidden text-center">
+                <div class="mb-6 verse-header"></div>
+                <p id="blank-text" class="text-xl leading-loose font-medium text-slate-800 break-keep"></p>
+                <div class="mt-8 flex justify-center gap-3">
+                    <button id="check-blank-btn" class="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">정답 확인</button>
+                    <button id="reset-blank-btn" class="px-6 py-2 bg-slate-200 text-slate-700 font-bold rounded-lg hover:bg-slate-300">다시 섞기</button>
+                </div>
+            </div>
+
+            <!-- 4단계: 실전 쓰기 -->
+            <div id="step4" class="step-content hidden flex flex-col h-full">
+                <div class="mb-4 verse-header text-center"></div>
+                <textarea id="full-textarea" class="w-full h-40 p-4 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none text-lg leading-relaxed resize-none" placeholder="보지 않고 성구를 끝까지 입력해 보세요. 띄어쓰기는 틀려도 채점됩니다."></textarea>
+                <div class="mt-4 flex justify-between items-center">
+                    <button id="check-full-btn" class="px-8 py-3 bg-rose-500 text-white font-bold rounded-xl hover:bg-rose-600 shadow-md transition-all">채점하기</button>
+                    <div id="full-result" class="text-lg font-bold"></div>
+                </div>
+                <div id="diff-result" class="mt-4 p-4 bg-slate-100 rounded-xl hidden text-sm leading-relaxed break-keep"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // 1. 데이터 (키워드 속성 k 추가)
+        const verses = [
+            { q: "계 2:14", k: "발람의 교훈, 우상의 제물", a: "그러나 네게 두어가지 책망할 것이 있나니 거기 네게 발람의 교훈을 지키는 자들이 있도다 발람이 발락을 가르쳐 이스라엘 앞에 올무를 놓아 우상의 제물을 먹게 하였고 또 행음하게 하였느니라" },
+            { q: "계 2:20", k: "여자 이세벨, 행음", a: "그러나 네게 책망할 일이 있노라 자칭 선지자라 하는 여자 이세벨을 네가 용납함이니 그가 내 종들을 가르쳐 꾀어 행음하게 하고 우상의 제물을 먹게 하는도다" },
+            { q: "계 3:4", k: "사데, 흰 옷", a: "그러나 사데에 그 옷을 더럽히지 아니한 자 몇명이 네게 있어 흰 옷을 입고 나와 함께 다니리니 그들은 합당한 자인 연고라" },
+            { q: "계 3:12", k: "성전 기둥, 새 이름", a: "이기는 자는 내 하나님 성전에 기둥이 되게 하리니 그가 결코 다시 나가지 아니하리라 내가 하나님의 이름과 하나님의 성 곧 하늘에서 내 하나님께로부터 내려 오는 새 예루살렘의 이름과 나의 새 이름을 그이 위에 기록하리라" },
+            { q: "계 4:3", k: "벽옥과 홍보석, 무지개", a: "앉으신 이의 모양이 벽옥과 홍보석 같고 또 무지개가 있어 보좌에 둘렸는데 그 모양이 녹보석 같더라" },
+            { q: "계 4:5", k: "일곱 등불, 일곱 영", a: "보좌로부터 번개와 음성과 뇌성이 나고 보좌 앞에 일곱 등불 켠것이 있으니 이는 하나님의 일곱 영이라" },
+            { q: "계 4:7", k: "네 생물", a: "그 첫째 생물은 사자 같고 그 둘째 생물은 송아지 같고 그 세째 생물은 얼굴이 사람 같고 그 네째 생물은 날아가는 독수리 같은데" },
+            { q: "계 5:1", k: "오른손에 책, 일곱 인", a: "내가 보매 보좌에 앉으신 이의 오른손에 책이 있으니 안팎으로 썼고 일곱 인으로 봉하였더라" },
+            { q: "계 5:3", k: "능히 책을 펼 자 없음", a: "하늘 위에나 땅 위에나 땅 아래에 능히 책을 펴거나 보거나 할 이가 없더라" },
+            { q: "계 5:7", k: "어린 양, 책을 취하심", a: "어린 양이 나아와서 보좌에 앉으신 이의 오른손에서 책을 취하시니라" },
+            { q: "계 6:2", k: "흰 말, 활, 면류관", a: "내가 이에 보니 흰 말이 있는데 그 탄 자가 활을 가졌고 면류관을 받고 나가서 이기고 또 이기려고 하더라" },
+            { q: "계 6:4", k: "붉은 말, 큰 칼", a: "이에 붉은 다른 말이 나오더라 그 탄 자가 허락을 받아 땅에서 화평을 제하여 버리며 서로 죽이게 하고 또 큰 칼을 받았더라" },
+            { q: "계 6:6", k: "한 데나리온, 감람유와 포도주", a: "내가 네 생물 사이로서 나는듯하는 음성을 들으니 가로되 한 데나리온에 밀 한되요 한 데나리온에 보리 석되로다 또 감람유와 포도주는 해치 말라 하더라" },
+            { q: "계 6:12", k: "여섯째 인, 큰 지진", a: "내가 보니 여섯째 인을 떼실 때에 큰 지진이 나며 해가 총담 같이 검어지고 온 달이 피 같이 되며" },
+            { q: "계 7:2", k: "하나님의 인, 네 천사", a: "또 보매 다른 천사가 살아계신 하나님의 인을 가지고 해 돋는 데로부터 올라와서 땅과 바다를 해롭게 할 권세를 얻은 네 천사를 향하여 큰 소리로 외쳐" },
+            { q: "계 7:3", k: "이마에 인치기까지", a: "가로되 우리가 우리 하나님의 종들의 이마에 인치기까지 땅이나 바다나 나무나 해하지 말라 하더라" },
+            { q: "계 7:4", k: "십 사만 사천", a: "내가 인맞은 자의 수를 들으니 이스라엘 자손의 각 지파 중에서 인맞은 자들이 십 사만 사천이니" },
+            { q: "계 8:1", k: "일곱째 인, 반시 동안 고요", a: "일곱째 인을 떼실 때에 하늘이 반시 동안쯤 고요하더니" },
+            { q: "계 8:6", k: "일곱 나팔", a: "일곱 나팔 가진 일곱 천사가 나팔 불기를 예비하더라" },
+            { q: "계 8:13", k: "독수리, 화 화 화", a: "내가 또 보고 들으니 공중에 날아가는 독수리가 큰 소리로 이르되 땅에 거하는 자들에게 화, 화, 화가 있으리로다 이 외에도 세 천사의 불 나팔소리를 인함이로다 하더라" },
+            { q: "계 9:1", k: "떨어진 별, 무저갱 열쇠", a: "다섯째 천사가 나팔을 불매 내가 보니 하늘에서 땅에 떨어진 별 하나가 있는데 저가 무저갱의 열쇠를 받았더라" },
+            { q: "계 9:15", k: "사람 삼분의 일", a: "네 천사가 놓였으니 그들은 그 년 월 일 시에 이르러 사람 삼분의 일을 죽이기로 예비한 자들이더라" },
+            { q: "계 10:10", k: "작은 책, 입엔 꿀 배엔 씀", a: "내가 천사의 손에서 작은 책을 갖다 먹어버리니 내 입에는 꿀 같이 다나 먹은 후에 내 배에서는 쓰게 되더라" },
+            { q: "계 10:11", k: "다시 예언", a: "저가 내게 말하기를 많은 백성과 나라와 방언과 임금에게 다시 예언하여야 하리라 하더라" },
+            { q: "계 11:1", k: "지팡이 같은 갈대, 척량", a: "또 내게 지팡이 같은 갈대를 주며 말하기를 일어나서 하나님의 성전과 제단과 그 안에서 경배하는 자들을 척량하되" },
+            { q: "계 11:15", k: "일곱째 나팔, 세상 나라", a: "일곱째 천사가 나팔을 불매 하늘에 큰 음성들이 나서 가로되 세상 나라가 우리 주와 그 그리스도의 나라가 되어 그가 세세토록 왕노릇 하시리로다 하니" }
+        ];
+
+        let currentIndex = 0;
+
+        // 초성 추출 함수
+        function getChosung(str) {
+            const cho = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+            let result = "";
+            for(let i=0; i<str.length; i++) {
+                let code = str.charCodeAt(i) - 44032;
+                if(code > -1 && code < 11172) result += cho[Math.floor(code/588)];
+                else result += str.charAt(i);
+            }
+            return result;
+        }
+
+        // 요소 캐싱
+        const selectEl = document.getElementById('verse-select');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const contents = document.querySelectorAll('.step-content');
+        
+        // 초기화
+        function init() {
+            verses.forEach((v, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.text = v.q;
+                selectEl.appendChild(opt);
+            });
+            selectEl.addEventListener('change', (e) => loadVerse(parseInt(e.target.value)));
+            prevBtn.addEventListener('click', () => loadVerse(currentIndex - 1));
+            nextBtn.addEventListener('click', () => loadVerse(currentIndex + 1));
+            
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    tabBtns.forEach(b => {
+                        b.classList.remove('bg-indigo-600', 'text-white', 'active');
+                        b.classList.add('bg-white', 'text-slate-500');
+                    });
+                    const targetBtn = e.currentTarget;
+                    targetBtn.classList.remove('bg-white', 'text-slate-500');
+                    targetBtn.classList.add('bg-indigo-600', 'text-white', 'active');
+                    
+                    contents.forEach(c => c.classList.add('hidden'));
+                    document.getElementById(targetBtn.dataset.target).classList.remove('hidden');
+                });
+            });
+
+            loadVerse(0);
+        }
+
+        let blankWordsData = []; 
+
+        function loadVerse(index) {
+            if(index < 0) index = verses.length - 1;
+            if(index >= verses.length) index = 0;
+            currentIndex = index;
+            selectEl.value = index;
+            
+            const verse = verses[currentIndex];
+            
+            // 헤더(제목 + 연상 키워드) 생성
+            const headers = document.querySelectorAll('.verse-header');
+            headers.forEach(el => {
+                el.innerHTML = `
+                    <h2 class="text-indigo-600 font-black text-xl inline-block align-middle">${verse.q}</h2>
+                    <span class="ml-3 inline-block px-3 py-1 bg-amber-100 text-amber-700 text-sm rounded-full align-middle font-bold">🔑 ${verse.k}</span>
+                `;
+            });
+            
+            // 1단계 세팅
+            document.querySelector('.verse-text').innerText = verse.a;
+            
+            // 2단계 세팅
+            document.getElementById('chosung-text').innerText = getChosung(verse.a);
+            
+            // 3단계 세팅
+            generateBlanks(verse.a);
+
+            // 4단계 세팅 초기화
+            document.getElementById('full-textarea').value = '';
+            document.getElementById('full-result').innerText = '';
+            document.getElementById('diff-result').classList.add('hidden');
+        }
+
+        function generateBlanks(text) {
+            const words = text.split(' ');
+            blankWordsData = [];
+            let htmlResult = '';
+
+            words.forEach((word, idx) => {
+                if(Math.random() < 0.4 && word.length > 0) {
+                    const cleanWord = word.replace(/[^가-힣a-zA-Z0-9]/g, '');
+                    const punctuation = word.replace(/[가-힣a-zA-Z0-9]/g, '');
+                    
+                    if(cleanWord.length > 0) {
+                        const id = `blank-${idx}`;
+                        blankWordsData.push({ id, answer: cleanWord });
+                        const width = cleanWord.length * 1.5 + 1; 
+                        htmlResult += `<input type="text" id="${id}" class="blank-input text-lg mx-1" style="width: ${width}rem;" autocomplete="off" />${punctuation} `;
+                    } else {
+                        htmlResult += word + ' ';
+                    }
+                } else {
+                    htmlResult += word + ' ';
+                }
+            });
+            document.getElementById('blank-text').innerHTML = htmlResult;
+        }
+
+        document.getElementById('check-blank-btn').addEventListener('click', () => {
+            let allCorrect = true;
+            blankWordsData.forEach(item => {
+                const inputEl = document.getElementById(item.id);
+                if(inputEl.value.trim() === item.answer) {
+                    inputEl.classList.remove('wrong');
+                    inputEl.classList.add('correct');
+                } else {
+                    inputEl.classList.remove('correct');
+                    inputEl.classList.add('wrong');
+                    allCorrect = false;
+                }
+            });
+            if(allCorrect) alert("🎉 완벽합니다! 모든 빈칸을 맞추셨어요.");
+        });
+
+        document.getElementById('reset-blank-btn').addEventListener('click', () => {
+            generateBlanks(verses[currentIndex].a);
+        });
+
+        document.getElementById('check-full-btn').addEventListener('click', () => {
+            const userAnswer = document.getElementById('full-textarea').value;
+            const correctAnswer = verses[currentIndex].a;
+            
+            const normalizedUser = userAnswer.replace(/\s+/g, '').trim();
+            const normalizedCorrect = correctAnswer.replace(/\s+/g, '').trim();
+            
+            const resultEl = document.getElementById('full-result');
+            const diffEl = document.getElementById('diff-result');
+            diffEl.classList.remove('hidden');
+
+            if (normalizedUser === normalizedCorrect) {
+                resultEl.innerHTML = '<span class="text-green-500">💯 완벽하게 암기했습니다!</span>';
+                diffEl.innerHTML = '틀린 글자가 없습니다. 대단합니다!';
+                diffEl.className = 'mt-4 p-4 bg-green-50 text-green-700 rounded-xl text-sm break-keep leading-relaxed';
+            } else {
+                resultEl.innerHTML = '<span class="text-rose-500">❌ 오답이 있습니다. 다시 확인해 보세요.</span>';
+                diffEl.className = 'mt-4 p-4 bg-rose-50 text-rose-700 rounded-xl text-sm break-keep leading-relaxed';
+                diffEl.innerHTML = `
+                    <strong>[원본 정답]</strong><br> ${correctAnswer}<br><br>
+                    <strong>[내가 쓴 답]</strong><br> ${userAnswer}
+                `;
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>
